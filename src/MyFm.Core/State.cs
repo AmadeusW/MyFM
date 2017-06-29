@@ -5,9 +5,10 @@ using System.Text;
 
 namespace MyFm.Core
 {
-    class State
+    public class State
     {
-        List<Location> Locations { get; } = new List<Location>();
+        public Location CurrentLocation { get; private set; }
+        public List<Location> Locations { get; } = new List<Location>();
 
         public State()
         {
@@ -17,6 +18,11 @@ namespace MyFm.Core
         public void AddLocation(Location location)
         {
             Locations.Add(location);
+        }
+
+        public void SetCurrentLocation(string path)
+        {
+            CurrentLocation = new Location(path, false, false);
         }
 
         public IEnumerable<string> GetContents(Location location)
