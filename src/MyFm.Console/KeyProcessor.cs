@@ -1,75 +1,120 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using MyFm.Core.Contracts;
+using MyFm.Core;
 
-namespace MyFm.Console
+namespace MyFm.Cli
 {
     class KeyProcessor
     {
+        StringBuilder _query;
 
-        public static void tempCode()
+        public KeyProcessor()
         {
-            ArrayList al = new ArrayList();
-            int tag = 0;
+            _query = new StringBuilder();
+        }
+        int LastChar => _query.Length - 1;
+        int InsertionPoint = 0;
 
-            ConsoleKeyInfo cki;
-
-            StringBuilder sb = new StringBuilder();
-            sb.Length = 0;
-
-            do
+        internal string ReadCommand(State state)
+        {
+            ILiveUpdate provider = null;
+            int tabCount = 0;
+            while (true)
             {
-                cki = Console.ReadKey();
-
-                if (cki.Key == ConsoleKey.Tab)
+                Console.SetCursorPosition(InsertionPoint, 1);
+                var key = Console.ReadKey();
+                switch (key.Key)
                 {
-                    for (int i = 0; i < saCommands.Length; i++)
-                    {
-                        if (fIsIn(sb.ToString(), saCommands[i].ToString()))
-                            al.Add(saCommands[i].ToString());
-                    }
+                    case ConsoleKey.Backspace:
+                        _query.Remove(LastChar, 1);
+                        InsertionPoint--;
+                        break;
 
-                    if (al.Count != 0)
-                    {
-                        Console.Write(al[0].ToString());
+                    case ConsoleKey.Delete:
+                        _query.Remove(InsertionPoint, 1);
+                        break;
 
-                        for (int i = 0; i < al.Count; i++)
+                    case ConsoleKey.RightArrow:
+                        if (InsertionPoint < _query.Length)
+                            InsertionPoint++;
+                        break;
+
+                    case ConsoleKey.LeftArrow:
+                        if (InsertionPoint > 0)
+                            InsertionPoint--;
+                        break;
+
+                    case ConsoleKey.Tab:
+
+                        var firstSpace_ = _query.ToString().IndexOf(' ');
+                        string completedString_ = String.Empty;
+                        if (firstSpace_ >= 0)
                         {
-                            if (tag == 0)
-                                Console.Clear();
-                            if (tag == 0)
-                                Console.Write(al[0].ToString());
-                            ConsoleKeyInfo cki2;
-                            cki2 = Console.ReadKey();
-
-                            if (cki2.Key == ConsoleKey.Tab)
+                            var providerName_ = _query.ToString().Substring(0, firstSpace_);
+                            if (Program.InvocationTable.TryGetValue(providerName_, out ICommand command_))
                             {
-                                if ((tag + 1) < al.Count)
+                                var provider_ = command_ as ILiveUpdate;
+                                if (provider != null)
                                 {
-                                    Console.Clear();
-                                    Console.Write(al[i + 1].ToString());
-                                    tag++;
+                                    var args = _query.ToString().Substring(firstSpace_ + 1);
+                                    completedString_ = provider.GetCompletion(state, args, tabCount);
                                 }
-                                else
-                                {
-                                    tag = 0;
-                                    i = -1;
-                                }
-                            }
-                            else
-                            {
-                                break;
                             }
                         }
-                    }
-                    continue;
+                        else
+                        {
+                            // Ask the provider
+                            completedString_ = (CommandProvider.Instance as ILiveUpdate).GetCompletion(state, _query.ToString(), tabCount);
+                        }
+
+                        Console.SetCursorPosition(0, 1);
+                        Console.Write(completedString_);
+                        InsertionPoint = completedString_.Length;
+                        break;
+
+                    case ConsoleKey.Escape:
+                        return String.Empty;
+
+                    case ConsoleKey.Enter:
+                        return _query.ToString();
+
+                    default:
+                        _query.Append(key.KeyChar);
+                        InsertionPoint++;
+                        break;
+                }
+                tabCount = key.Key == ConsoleKey.Tab ? tabCount + 1 : 0;
+                for (int line = 9; line < 20; line++) // Clear the update area
+                {
+                    Console.SetCursorPosition(0, line);
+                    Console.Write("                                                    ");
                 }
 
-                sb.Append(cki.Key.ToString());
+                var firstSpace = _query.ToString().IndexOf(' ');
+                var providerName = firstSpace < 0 ? _query.ToString() : _query.ToString().Substring(0, firstSpace);
 
-            } while (cki.Key != ConsoleKey.Escape);
-
+                string tip = String.Empty;
+                Console.ForegroundColor = ConsoleColor.White;
+                if (Program.InvocationTable.TryGetValue(providerName, out ICommand command))
+                {
+                    var provider_ = command as ILiveUpdate;
+                    if (provider != null)
+                    {
+                        var args = _query.ToString().Substring(firstSpace + 1);
+                        tip = provider?.ShowUpdate(state, _query.ToString(), 0, 10);
+                    }
+                }
+                else
+                {
+                    tip = (CommandProvider.Instance as ILiveUpdate).ShowUpdate(state, _query.ToString(), 0, 10);
+                }
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.SetCursorPosition(0, 9);
+                Console.Write(tip);
+            }
         }
-
     }
 }

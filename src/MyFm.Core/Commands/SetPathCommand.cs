@@ -1,15 +1,16 @@
-﻿using System;
+﻿using MyFm.Core.Contracts;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace MyFm.Core.Commands
 {
-    public class SetPathCommand : ICommand
+    public class SetPathCommand : ICommand, ILiveUpdate
     {
-        public string Name => "set";
+        string ICommand.Name => "set";
 
-        public State Evaluate(State state, string args)
+        State ICommand.Evaluate(State state, string args)
         {
             var wholeCommand = args.Trim();
             var wordBoundary = wholeCommand.IndexOf(' ');
@@ -35,6 +36,31 @@ namespace MyFm.Core.Commands
             state.AddLocation(location, moniker);
 
             return state;
+        }
+
+        string ILiveUpdate.GetCompletion(State state, string query, int index)
+        {
+            return String.Empty;
+        }
+
+        string ILiveUpdate.ShowUpdate(State state, string query, int xOffset, int yOffset)
+        {
+            string moniker = String.Empty;
+            string path = String.Empty;
+            query = query.Trim();
+            var firstSpace = query.IndexOf(' ');
+            if (firstSpace < 0)
+            {
+                moniker = query;
+                path = state.CurrentLocation.Path;
+            }
+            else
+            {
+                moniker = query.Substring(0, firstSpace);
+                path = Path.Combine(state.CurrentLocation.Path, query.Substring(firstSpace + 1));
+            }
+
+            return $"Assign [{moniker}] to {path}";
         }
     }
 }

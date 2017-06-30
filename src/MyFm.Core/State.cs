@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using MyFm.Core.Contracts;
 
 namespace MyFm.Core
 {
@@ -25,12 +26,5 @@ namespace MyFm.Core
         {
             CurrentLocation = new Location(path, false, false);
         }
-
-        public IEnumerable<string> GetContents(Location location)
-        {
-            return Directory.EnumerateFileSystemEntries(location.Path);
-        }
-
-
     }
 }

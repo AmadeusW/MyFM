@@ -1,22 +1,23 @@
 ﻿using MyFm.Core;
 using MyFm.Core.Commands;
+using MyFm.Core.Contracts;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace src
+namespace MyFm.Cli
 {
     class Program
     {
-        static Dictionary<string, ICommand> _invocationTable;
+        public static Dictionary<string, ICommand> InvocationTable { get; private set; }
 
         static void Main(string[] args)
         {
             var currentPath = Directory.GetCurrentDirectory();
             var state = new State(); 
             state.SetCurrentLocation(currentPath);
-            _invocationTable = InitializeCommands();
+            InvocationTable = InitializeCommands();
 
             do
             {
@@ -44,13 +45,14 @@ namespace src
             try
             {
                 PrintPrompt(state);
-                var instruction = Read();
+                var instruction = Read(state);
                 var newState = instruction.Item1.Evaluate(state, instruction.Item2);
                 Print(newState);
                 return newState;
             }
             catch (Exception ex)
             {
+                Console.SetCursorPosition(0, 9);
                 Console.WriteLine(ex.Message);
                 return state;
             }
@@ -68,23 +70,23 @@ namespace src
             Console.SetCursorPosition(state.CurrentLocation.Path.Length + 2, 0);
         }
 
-        private static (ICommand, string) Read()
+        private static (ICommand, string) Read(State state)
         {
-            var wholeCommand = Console.ReadLine().Trim();
-            var wordBoundary = wholeCommand.IndexOf(' ');
+            string query = new KeyProcessor().ReadCommand(state).Trim();
+            var wordBoundary = query.IndexOf(' ');
             string commandName;
             string commandArgs;
             if (wordBoundary < 0)
             {
-                commandName = wholeCommand;
+                commandName = query;
                 commandArgs = String.Empty;
             }
             else
             {
-                commandName = wholeCommand.Substring(0, wordBoundary);
-                commandArgs = wholeCommand.Substring(wordBoundary).Trim();
+                commandName = query.Substring(0, wordBoundary);
+                commandArgs = query.Substring(wordBoundary).Trim();
             }
-            if (_invocationTable.TryGetValue(commandName, out ICommand command))
+            if (InvocationTable.TryGetValue(commandName, out ICommand command))
             {
                 return (command, commandArgs);
             }
