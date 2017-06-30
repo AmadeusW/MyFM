@@ -32,6 +32,7 @@ namespace src
             {
                 new ChangeDirectoryCommand(),
                 new ExitCommand(),
+                new SetPathCommand(),
             };
 
             var invocationTable = knownCommands.ToDictionary(n => n.Name, n => n);
@@ -58,12 +59,12 @@ namespace src
         private static void PrintPrompt(State state)
         {
             Console.SetCursorPosition(0, 0);
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write(state.CurrentLocation.Path);
-            Console.ForegroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write("> ");
             Console.Write("                                                               "); // TODO: find a better way
-            Console.ForegroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.Gray;
             Console.SetCursorPosition(state.CurrentLocation.Path.Length + 2, 0);
         }
 
@@ -98,7 +99,14 @@ namespace src
             Console.SetCursorPosition(0, 2);
             foreach (var location in state.Locations)
             {
-                Console.WriteLine(location);
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("[");
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(location.Key);
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("] ");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine(location.Value.Path);
             }
         }
     }

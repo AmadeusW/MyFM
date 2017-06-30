@@ -8,7 +8,7 @@ namespace MyFm.Core
     public class State
     {
         public Location CurrentLocation { get; private set; }
-        public List<Location> Locations { get; } = new List<Location>();
+        public Dictionary<string, Location> Locations { get; } = new Dictionary<string, Location>();
         public bool Running { get; set; }
 
         public State()
@@ -16,9 +16,9 @@ namespace MyFm.Core
             Running = true;
         }
 
-        public void AddLocation(Location location)
+        public void AddLocation(Location location, string moniker)
         {
-            Locations.Add(location);
+            Locations[moniker] = location;
         }
 
         public void SetCurrentLocation(string path)
