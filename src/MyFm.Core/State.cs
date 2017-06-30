@@ -9,10 +9,11 @@ namespace MyFm.Core
     {
         public Location CurrentLocation { get; private set; }
         public List<Location> Locations { get; } = new List<Location>();
+        public bool Running { get; set; }
 
         public State()
         {
-
+            Running = true;
         }
 
         public void AddLocation(Location location)

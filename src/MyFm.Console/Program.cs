@@ -1,69 +1,105 @@
 ﻿using MyFm.Core;
+using MyFm.Core.Commands;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace src
 {
     class Program
     {
-        static State state;
+        static Dictionary<string, ICommand> _invocationTable;
 
         static void Main(string[] args)
         {
             var currentPath = Directory.GetCurrentDirectory();
-            state = new State();
+            var state = new State(); 
             state.SetCurrentLocation(currentPath);
+            _invocationTable = InitializeCommands();
 
-            bool running = true;
             do
             {
-                running = Repl();
-            } while (running);
+                state = Repl(state);
+            } while (state.Running);
             Console.WriteLine("Exited. Press Enter to quit");
             Console.ReadLine();
         }
 
-        private static bool Repl()
+        private static Dictionary<string, ICommand> InitializeCommands()
         {
-            var command = Read();
-            var result = Evaluate(command);
-            Print();
-            return result;
+            var knownCommands = new List<ICommand>
+            {
+                new ChangeDirectoryCommand(),
+                new ExitCommand(),
+            };
+
+            var invocationTable = knownCommands.ToDictionary(n => n.Name, n => n);
+            return invocationTable;
         }
 
-        private static void Print()
+        private static State Repl(State state)
+        {
+            try
+            {
+                PrintPrompt(state);
+                var instruction = Read();
+                var newState = instruction.Item1.Evaluate(state, instruction.Item2);
+                Print(newState);
+                return newState;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return state;
+            }
+        }
+
+        private static void PrintPrompt(State state)
+        {
+            Console.SetCursorPosition(0, 0);
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(state.CurrentLocation.Path);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write("> ");
+            Console.Write("                                                               "); // TODO: find a better way
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.SetCursorPosition(state.CurrentLocation.Path.Length + 2, 0);
+        }
+
+        private static (ICommand, string) Read()
+        {
+            var wholeCommand = Console.ReadLine().Trim();
+            var wordBoundary = wholeCommand.IndexOf(' ');
+            string commandName;
+            string commandArgs;
+            if (wordBoundary < 0)
+            {
+                commandName = wholeCommand;
+                commandArgs = String.Empty;
+            }
+            else
+            {
+                commandName = wholeCommand.Substring(0, wordBoundary);
+                commandArgs = wholeCommand.Substring(wordBoundary).Trim();
+            }
+            if (_invocationTable.TryGetValue(commandName, out ICommand command))
+            {
+                return (command, commandArgs);
+            }
+            else
+            {
+                throw new ArgumentException($"Command not found: {commandName}");
+            }
+        }
+
+        private static void Print(State state)
         {
             Console.SetCursorPosition(0, 2);
             foreach (var location in state.Locations)
             {
                 Console.WriteLine(location);
             }
-        }
-
-        private static bool Evaluate(string command)
-        {
-            Console.SetCursorPosition(1, 1);
-            if (command.ToLowerInvariant() == "exit")
-            {
-                Console.WriteLine("Bye");
-                return false;
-            }
-            Console.WriteLine(command);
-            return true;
-        }
-
-        private static string Read()
-        {
-            PrintPrompt();
-            return Console.ReadLine();
-        }
-
-        private static void PrintPrompt()
-        {
-            Console.SetCursorPosition(0, 0);
-            Console.Write(state.CurrentLocation.Path);
-            Console.Write(" > ");
-            Console.SetCursorPosition(state.CurrentLocation.Path.Length + 3, 0);
         }
     }
 }

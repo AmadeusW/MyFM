@@ -7,6 +7,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.4.0-preview2-25405-01" />
     <PackageReference Include="WolfCurses" Version="2.1.0.16" />
   </ItemGroup>
   <ItemGroup>
