@@ -57,10 +57,10 @@ namespace MyFm.Cli
                             if (Program.InvocationTable.TryGetValue(providerName_, out ICommand command_))
                             {
                                 var provider_ = command_ as ILiveUpdate;
-                                if (provider != null)
+                                if (provider_ != null)
                                 {
                                     var args = _query.ToString().Substring(firstSpace_ + 1);
-                                    completedString_ = provider.GetCompletion(state, args, tabCount);
+                                    completedString_ = provider_.GetCompletion(state, args, tabCount);
                                 }
                             }
                         }
@@ -98,13 +98,24 @@ namespace MyFm.Cli
 
                 string tip = String.Empty;
                 Console.ForegroundColor = ConsoleColor.White;
-                if (Program.InvocationTable.TryGetValue(providerName, out ICommand command))
+                if (firstSpace >= 0)
                 {
-                    var provider_ = command as ILiveUpdate;
-                    if (provider != null)
+                    providerName = _query.ToString().Substring(0, firstSpace);
+                    if (Program.InvocationTable.TryGetValue(providerName, out ICommand command))
                     {
-                        var args = _query.ToString().Substring(firstSpace + 1);
-                        tip = provider?.ShowUpdate(state, _query.ToString(), 0, 10);
+                        provider = command as ILiveUpdate;
+                        if (provider != null)
+                        {
+                            var args = _query.ToString().Substring(firstSpace + 1);
+                            try
+                            {
+                                tip = provider?.ShowUpdate(state, args, 0, 10);
+                            }
+                            catch
+                            {
+                                tip = String.Empty;
+                            }
+                        }
                     }
                 }
                 else

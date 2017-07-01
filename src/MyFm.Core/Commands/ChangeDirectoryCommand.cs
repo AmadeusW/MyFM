@@ -51,13 +51,22 @@ namespace MyFm.Core.Commands
         private (string parentDirectory, string typedDirectory) parseUserQuery(State state, string query)
         {
             query = query.Trim();
-            var lastSlash = query.LastIndexOf('/');
+            var lastSlash = query.LastIndexOf('\\');
             string parentDirectory = state.CurrentLocation.Path;
             string typedDirectory = query;
             if (lastSlash >= 0)
             {
-                parentDirectory += "/" + query.Substring(0, lastSlash);
-                typedDirectory = query.Substring(lastSlash + 1);
+                var directory = query.Substring(0, lastSlash);
+                if (Directory.Exists(directory))
+                {
+                    parentDirectory = directory;
+                    typedDirectory = query.Substring(lastSlash + 1);
+                }
+                else
+                {
+                    parentDirectory += '\\' + directory;
+                    typedDirectory = query.Substring(lastSlash + 1);
+                }
             }
             return (parentDirectory, typedDirectory);
         }
